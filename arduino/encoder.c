@@ -47,9 +47,9 @@ void encoder_update() {
 }
 
 uint32_t encoder_position() {
-  return g_position/4;
+  return g_position >> 2;
 }
 
 void encoder_set(uint32_t position) {
-  g_position = position*4;
+  g_position = position << 2;
 }

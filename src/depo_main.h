@@ -35,6 +35,10 @@ extern "C" {
 #  error "platform: define a void ADP_display_cursor(uint8_t on)"
 #endif
 
+#ifndef ADP_display_blink
+#  error "platform: define a void ADP_display_blink(uint8_t on)"
+#endif
+
 #ifndef ADP_display_write
 #  error "platform: define a void ADP_display_write(char)"
 #endif

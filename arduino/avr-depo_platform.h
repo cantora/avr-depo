@@ -11,6 +11,7 @@ extern "C" {
 void serial_print(const char *);
 void lcd_set_cursor(uint16_t, uint16_t);
 void lcd_cursor(uint8_t);
+void lcd_blink(uint8_t);
 void lcd_write(char);
 void lcd_clear();
 
@@ -25,6 +26,7 @@ void lcd_clear();
   } while(0)
 #define ADP_display_cursor_set(col, row) lcd_set_cursor(col, row)
 #define ADP_display_cursor(on) lcd_cursor(on)
+#define ADP_display_blink(on) lcd_blink(on)
 #define ADP_display_write(c) lcd_write(c)
 #define ADP_display_clear() lcd_clear()
 

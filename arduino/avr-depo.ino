@@ -30,6 +30,13 @@ void lcd_cursor(uint8_t on) {
     g_lcd.noCursor();
 }
 
+void lcd_blink(uint8_t on) {
+  if(on)
+    g_lcd.blink();
+  else
+    g_lcd.noBlink();
+}
+
 void lcd_write(char c) {
   g_lcd.write(c);
 }
@@ -62,17 +69,37 @@ void setup()
 }
 
 void loop() {
-  /*
+  static int once = 0;
+/*
   static uint32_t prev_pos = 0;
   uint32_t pos;
+  char buf[16];
+  static int btn0 = 99;
+  int btn;
 
-  pos = encoder_position();
+
+  pos = ADP_selector_position();
   if(prev_pos != pos) {
     prev_pos = pos;
-    Serial.println(prev_pos);
+    g_lcd.clear();
+    g_lcd.setCursor(0, 0);
+    g_lcd.print(prev_pos);
   }
-  */
 
-  depo_main();
-  delay(1000);
+  btn = button_check();
+  if(btn != btn0) {
+    btn0 = btn;
+    Serial.print("btn: ");
+    Serial.println(btn0);
+  }
+*/
+
+
+  if(once == 0) {
+    once = 1;
+    depo_main();
+    g_lcd.clear();
+    g_lcd.setCursor(0, 0);
+    g_lcd.print("fail");
+  }
 }
