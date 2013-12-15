@@ -1,3 +1,4 @@
+#include "ui.h"
 #include "avr-depo.h"
 
 #include "display.h"
