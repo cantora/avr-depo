@@ -49,6 +49,10 @@ void arduino_delay(uint32_t m) {
   delay(m);
 }
 
+uint32_t arduino_millis() {
+  return millis();
+}
+
 /******************
  * main stuff 
  */

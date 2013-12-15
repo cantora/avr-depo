@@ -7,6 +7,25 @@
 static const uint32_t INPUT_CHAR_OFFSET = 0x20;
 static const uint32_t INPUT_CHAR_RANGE = 0x80-2-0x20;
 
+static void selector_set(uint32_t val, uint32_t range) {
+  ADP_selector_set(range*1000UL + val);
+}
+
+static int button_wait(uint8_t state, uint32_t millisecs, uint32_t max) {
+  uint32_t start, t, last;
+
+  start = ADP_ts_millis();
+  last = start;
+  while( (t = ADP_ts_millis()) < (start + max) ) {
+    if(ADP_button_check() != state)
+      last = t;
+    else if(t - last >= millisecs)
+      return 0;
+  }
+
+  return 1;
+}
+
 size_t ui_input(uint16_t col, uint16_t row, uint8_t *data, size_t len, uint8_t opts) {
   size_t i, j;
   uint8_t pos0, pos1, btn, new_char;
@@ -15,10 +34,10 @@ size_t ui_input(uint16_t col, uint16_t row, uint8_t *data, size_t len, uint8_t o
   display_dims(&cols, &rows);
   col_space = cols - col;
   if(col_space < 2)
-    return -1;
+    return 0;
 
   pos0 = 0;
-  ADP_selector_set(INPUT_CHAR_RANGE*1000UL + (0x61 - INPUT_CHAR_OFFSET));
+  selector_set(0x61 - INPUT_CHAR_OFFSET, INPUT_CHAR_RANGE);
   btn = 0;
 
   for(i = 0; i < len; i++) {
@@ -46,11 +65,7 @@ size_t ui_input(uint16_t col, uint16_t row, uint8_t *data, size_t len, uint8_t o
 
       if(btn != 0) {
         data[i] = pos0;
-        for(j = 0; j < 3; ) {
-          if(ADP_button_check() == 0)
-            j++;
-          ADP_delay(50);
-        }
+        button_wait(0, 200, 1000);
         break;
       }
       new_char = 0;

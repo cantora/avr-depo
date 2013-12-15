@@ -51,6 +51,10 @@ extern "C" {
 #  error "platform: define a void ADP_delay(uint32_t millis)"
 #endif
 
+#ifndef ADP_ts_millis
+#  error "platform: define a uint32_t ADP_ts_millis()"
+#endif
+
 #ifdef __cplusplus
 }
 #endif

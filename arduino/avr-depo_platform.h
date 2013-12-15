@@ -15,6 +15,7 @@ void lcd_blink(uint8_t);
 void lcd_write(char);
 void lcd_clear();
 void arduino_delay(uint32_t m);
+uint32_t arduino_millis();
 
 #define ADP_selector_position() encoder_position()
 #define ADP_selector_set(pos) encoder_set(pos)
@@ -31,6 +32,7 @@ void arduino_delay(uint32_t m);
 #define ADP_display_write(c) lcd_write(c)
 #define ADP_display_clear() lcd_clear()
 #define ADP_delay(m) arduino_delay(m)
+#define ADP_ts_millis() arduino_millis()
 
 #ifdef __cplusplus
 }
