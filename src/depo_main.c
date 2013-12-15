@@ -32,7 +32,7 @@ void depo_main() {
 
   ADP_display_clear();
   display_print(0, 0, "key:");
-  if(password(4, 0, key) != 0) {
+  if(ui_input(4, 0, key, sizeof(key), 0) != 0) {
     err("error in password entry\n");
     return;
   }
