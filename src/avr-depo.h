@@ -47,6 +47,14 @@ extern "C" {
 #  error "platform: define a void ADP_display_clear()"
 #endif
 
+#ifndef ADP_display_ok_char
+#  error "platform: define a uint8_t ADP_display_ok_char()"
+#endif
+
+#ifndef ADP_display_input_terminal_char
+#  error "platform: define a uint8_t ADP_display_input_terminal_char(). (value must be in range 0x20->0x7D)"
+#endif
+
 #ifndef ADP_delay
 #  error "platform: define a void ADP_delay(uint32_t millis)"
 #endif

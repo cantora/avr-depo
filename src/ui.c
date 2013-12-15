@@ -26,9 +26,11 @@ static int button_wait(uint8_t state, uint32_t millisecs, uint32_t max) {
   return 1;
 }
 
-size_t ui_input(uint16_t col, uint16_t row, uint8_t *data, size_t len, uint8_t opts) {
+size_t ui_input(uint16_t col, uint16_t row, /* starting col,row of interaction */
+                uint8_t *data, size_t len,  /* buffer to write user input into */
+                uint8_t opts) {             /* options, see enum */
   size_t i, j;
-  uint8_t pos0, pos1, btn, new_char;
+  uint8_t pos0, pos1, btn, new_char, ok, terminal_ch;
   uint16_t col_space, prev_amt, cols, rows;
 
   display_dims(&cols, &rows);
@@ -36,6 +38,8 @@ size_t ui_input(uint16_t col, uint16_t row, uint8_t *data, size_t len, uint8_t o
   if(col_space < 2)
     return 0;
 
+  ok = ADP_display_ok_char();
+  terminal_ch = ADP_display_input_terminal_char();
   pos0 = 0;
   selector_set(0x61 - INPUT_CHAR_OFFSET, INPUT_CHAR_RANGE);
   btn = 0;
@@ -60,17 +64,20 @@ size_t ui_input(uint16_t col, uint16_t row, uint8_t *data, size_t len, uint8_t o
               ADP_display_write(data[i-prev_amt+j]);
           ADP_display_write(data[i-1]);
         }
-        ADP_display_write(pos0);
+        ADP_display_write((pos0 == terminal_ch)? ok : pos0);
       }
 
       if(btn != 0) {
-        data[i] = pos0;
         button_wait(0, 200, 1000);
+        if(pos0 == terminal_ch)
+          goto done;
+        data[i] = pos0;
         break;
       }
       new_char = 0;
     }
   }
 
+done:
   return i;
 }
