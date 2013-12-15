@@ -45,6 +45,10 @@ void lcd_clear() {
   g_lcd.clear();
 }
 
+void arduino_delay(uint32_t m) {
+  delay(m);
+}
+
 /******************
  * main stuff 
  */

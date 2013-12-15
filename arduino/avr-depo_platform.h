@@ -14,6 +14,7 @@ void lcd_cursor(uint8_t);
 void lcd_blink(uint8_t);
 void lcd_write(char);
 void lcd_clear();
+void arduino_delay(uint32_t m);
 
 #define ADP_selector_position() encoder_position()
 #define ADP_selector_set(pos) encoder_set(pos)
@@ -29,6 +30,7 @@ void lcd_clear();
 #define ADP_display_blink(on) lcd_blink(on)
 #define ADP_display_write(c) lcd_write(c)
 #define ADP_display_clear() lcd_clear()
+#define ADP_delay(m) arduino_delay(m)
 
 #ifdef __cplusplus
 }

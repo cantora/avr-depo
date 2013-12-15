@@ -51,5 +51,6 @@ uint32_t encoder_position() {
 }
 
 void encoder_set(uint32_t position) {
-  g_position = position << 2;
+  /* add two to put it in a stable position */
+  g_position = (position << 2) + 2;
 }

@@ -11,7 +11,7 @@
 #define BUTTON_DOWNSHIFT BUTTON_PIN_OFFSET
 #define BUTTON_MASK (0b1 << BUTTON_DOWNSHIFT)
 
-inline uint8_t button_check() {
+static inline uint8_t button_check() {
   return !((BUTTON_PORT & BUTTON_MASK) >> BUTTON_DOWNSHIFT);
 }
 
