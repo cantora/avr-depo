@@ -1,5 +1,5 @@
-#ifndef AVR_DEPO_encoder_h
-#define AVR_DEPO_encoder_h
+#ifndef AVR_DEPO_ARDUINO_encoder_h
+#define AVR_DEPO_ARDUINO_encoder_h
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,4 +25,4 @@ void encoder_set(uint32_t position);
 }
 #endif
 
-#endif /* AVR_DEPO_encoder_h */
+#endif /* AVR_DEPO_ARDUINO_encoder_h */

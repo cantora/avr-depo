@@ -1,5 +1,5 @@
-#ifndef AVR_DEPO_button_h
-#define AVR_DEPO_button_h
+#ifndef AVR_DEPO_ARDUINO_button_h
+#define AVR_DEPO_ARDUINO_button_h
 
 #include <Arduino.h>
 
@@ -15,4 +15,4 @@ static inline uint8_t button_check() {
   return !((BUTTON_PORT & BUTTON_MASK) >> BUTTON_DOWNSHIFT);
 }
 
-#endif /* AVR_DEPO_button_h */
+#endif /* AVR_DEPO_ARDUINO_button_h */

@@ -3,89 +3,13 @@
 
 #include "display.h"
 #include "util.h"
+#include "btn.h"
 
 static const uint32_t INPUT_CHAR_OFFSET = 0x20;
 static const uint32_t INPUT_CHAR_RANGE = 0x80-2-0x20;
 
 static void selector_set(uint32_t val, uint32_t range) {
   ADP_selector_set(range*1000UL + val);
-}
-
-typedef enum {
-  UI_BTN_STATE_OFF = 0,
-  UI_BTN_STATE_TRIGGER,
-  UI_BTN_STATE_HOLDING_A,
-  UI_BTN_STATE_HOLDING_B,
-  UI_BTN_STATE_RELEASED
-} ui_btn_state;
-
-static struct {
-  uint32_t t;
-  ui_btn_state state;
-} g_btn;
-
-
-static void btn_state_init() {
-  g_btn.state = UI_BTN_STATE_OFF;
-  g_btn.t = ADP_ts_millis();
-}
-
-#define UI_BTN_EDGE_THRESH 350 /* milliseconds */
-
-static inline int btn_state_down() {
-  return (g_btn.state == UI_BTN_STATE_HOLDING_A
-          || g_btn.state == UI_BTN_STATE_HOLDING_B
-          || g_btn.state == UI_BTN_STATE_TRIGGER);
-}
-
-static inline int btn_state_released() {
-  return (g_btn.state == UI_BTN_STATE_RELEASED);
-}
-
-static inline void btn_state_update() {
-  uint8_t val;
-
-  if(btn_state_released())
-    return;
-
-  val = ADP_button_check();
-
-  switch(g_btn.state) {
-  case UI_BTN_STATE_OFF:
-    if(val != 0) {
-      g_btn.t = ADP_ts_millis();
-      g_btn.state = UI_BTN_STATE_TRIGGER;
-    }
-    break;
-  case UI_BTN_STATE_TRIGGER:
-    if(val == 0)
-      g_btn.state = UI_BTN_STATE_HOLDING_B;
-    else
-      if(ADP_ts_millis() - g_btn.t >= UI_BTN_EDGE_THRESH)
-        g_btn.state = UI_BTN_STATE_HOLDING_A;
-    break;
-  case UI_BTN_STATE_HOLDING_A:
-    if(val == 0) {
-      g_btn.state = UI_BTN_STATE_HOLDING_B;
-      g_btn.t = ADP_ts_millis();
-    }
-    break;
-  case UI_BTN_STATE_HOLDING_B:
-    if(val != 0) {
-      if(g_btn.t < UI_BTN_EDGE_THRESH)
-        g_btn.state = UI_BTN_STATE_HOLDING_A;
-      else {
-        g_btn.state = UI_BTN_STATE_TRIGGER;
-        g_btn.t = ADP_ts_millis();
-      }
-    }
-    else if(ADP_ts_millis() - g_btn.t >= 225) {
-      g_btn.state = UI_BTN_STATE_RELEASED;
-    }
-    break;
-  default:
-    ;/* stick in this state until manual reset */
-  }
 }
 
 static inline uint16_t print_input(uint8_t *data, uint8_t len,

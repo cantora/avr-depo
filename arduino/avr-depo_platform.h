@@ -1,5 +1,5 @@
-#ifndef AVR_DEPO_avr_depo_platform_h
-#define AVR_DEPO_avr_depo_platform_h
+#ifndef AVR_DEPO_ARDUINO_avr_depo_platform_h
+#define AVR_DEPO_ARDUINO_avr_depo_platform_h
 
 #include "encoder.h"
 #include "button.h"
@@ -50,4 +50,4 @@ uint32_t arduino_millis();
 }
 #endif
 
-#endif /* AVR_DEPO_avr_depo_platform_h */
+#endif /* AVR_DEPO_ARDUINO_avr_depo_platform_h */
