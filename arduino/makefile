@@ -14,7 +14,7 @@ TARGET             = avr-depo
 MONITOR_BAUDRATE   = 115200
 OPTIMIZATION_LEVEL = 3
 AVR_DEPO_SRC       = $(realpath ../src)
-EXTRA_FLAGS        = -iquote$(AVR_DEPO_SRC) -I$(AVR_DEPO_LIB_DIR)
+EXTRA_FLAGS        = -iquote$(AVR_DEPO_SRC) -I$(AVR_DEPO_LIB_DIR) $(AVR_DEPO_INCLUDES)
 AVR_DEPO_SRCS      = $(notdir $(wildcard $(AVR_DEPO_SRC)/*.c))
 AVR_DEPO_OBJS      = $(patsubst %.c,%.o,$(AVR_DEPO_SRCS))
 
