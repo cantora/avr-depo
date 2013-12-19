@@ -2,7 +2,7 @@ BOARD_TAG          = uno
 AVR_DEPO_PLATFORM  = arduino-$(BOARD_TAG)
 AVR_DEPO_PLATFORM_MCU = $(MCU)
 AVR_DEPO_PLATFORM_CPU = $(F_CPU)
-AVR_DEPO_PLATFORM_BUILD_DIR = $(realpath build-$(BOARD_TAG))
+AVR_DEPO_PLATFORM_BUILD_DIR = $(realpath .)/build-$(BOARD_TAG)
 
 #install from github.com/sudar/Arduino-Makefile
 ARDUINO_DIR        = /usr/share/arduino
