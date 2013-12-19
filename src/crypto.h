@@ -12,6 +12,7 @@
 
 int crypto_pbkdf2(const char *pass, uint16_t passlen,
                   const uint8_t *salt, uint16_t saltlen,
-                  uint16_t iter, uint16_t keylen, uint8_t *out);
+                  uint16_t iter, uint16_t keylen, uint8_t *out,
+                  void (*cb)(uint16_t bytes), uint32_t cb_ms_ivl);
 
 #endif /* AVR_DEPO_crypto_h */

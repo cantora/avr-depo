@@ -22,7 +22,24 @@ static void err(const char *msg) {
   g_aborted = 1;
 }
 
-int generate_key(uint8_t *key) {
+static void generate_update(uint16_t bytes) {
+  static uint16_t count = 0;
+  int i;
+
+  ADP_display_clear();
+  ADP_display_cursor_set(0, 0);
+
+  for(i = 0; i <= (count%3); i++)  
+    ADP_display_write('>');
+  for(i = 0; i < 2-(count%3); i++)
+    ADP_display_write(' ');
+
+  display_print_n(4, 0, bytes, 10);
+
+  count++;
+}
+
+static int generate_key(uint8_t *key) {
   uint8_t pass[PASS_MAX_LEN];
   uint8_t salt[8] = "12345678";
   size_t len;
@@ -41,8 +58,11 @@ int generate_key(uint8_t *key) {
     break;
   }
 
-  if(crypto_pbkdf2((const char *) pass, (uint16_t) len, salt, 8,
-                   PBKDF2_ITERS, KEYLEN, key) != 0)
+  ADP_display_clear();
+  if(crypto_pbkdf2((const char *) pass, (uint16_t) len,
+                   salt, 8, PBKDF2_ITERS,
+                   KEYLEN, key,
+                   generate_update, 500) != 0)
     return -1;
 
   return 0;
