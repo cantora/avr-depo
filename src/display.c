@@ -10,11 +10,25 @@ void display_print(uint16_t col, uint16_t row, const char *s) {
 
   display_dims(&cols, &rows);
   ADP_display_cursor_set(col, row);
-  for(i = col; i < cols; i++){
-    if(*(s+i) == 0x00)
+  for(i = 0; (col+i) < cols; i++){
+    if(s[i] == 0x00)
       break;
-    ADP_display_write(*(s+i));
+    ADP_display_write(s[i]);
   }
+}
+
+void display_print_n(uint16_t col, uint16_t row, uint32_t n, int radix) {
+  char buf[16];
+  char *result;
+
+  /* buf[16] will hold decimal and hex 32 bit int
+   * but wont hold a binary conversion */
+  if(radix != 10 && radix != 16)
+    return; 
+
+  result = ultoa(n, buf, radix);
+  if(result)
+    display_print(col, row, result);
 }
 
 int display_print_chunk(uint16_t col, uint16_t row, const char *s) {
