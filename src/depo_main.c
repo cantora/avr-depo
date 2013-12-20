@@ -4,6 +4,7 @@
 #include "display.h"
 #include "ui.h"
 #include "crypto.h"
+#include "avr-depo-config.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -12,7 +13,6 @@ static const uint8_t MIN_ROWS = 1;
 static const uint8_t MIN_COLS = 8;
 static const uint8_t PASS_MAX_LEN = 128;
 static const uint8_t KEYLEN = 20;
-static const uint16_t PBKDF2_ITERS = 1000;
 
 static uint8_t g_aborted = 0;
 
@@ -41,7 +41,6 @@ static void generate_update(uint16_t bytes) {
 
 static int generate_key(uint8_t *key) {
   uint8_t pass[PASS_MAX_LEN];
-  uint8_t salt[8] = "12345678";
   size_t len;
 
   while(1) {
@@ -60,7 +59,9 @@ static int generate_key(uint8_t *key) {
 
   ADP_display_clear();
   if(crypto_pbkdf2((const char *) pass, (uint16_t) len,
-                   salt, 8, PBKDF2_ITERS,
+                   (const uint8_t *) AVR_DEPO_config_pbkdf2_salt,
+                   AVR_DEPO_config_pbkdf2_saltlen,
+                   AVR_DEPO_config_pbkdf2_rounds,
                    KEYLEN, key,
                    generate_update, 500) != 0)
     return -1;
