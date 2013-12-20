@@ -19,7 +19,9 @@ static inline uint16_t byte_progress(int32_t bytes, int32_t cplen, int32_t j, ui
 int crypto_pbkdf2(const char *pass, uint16_t passlen,
                   const uint8_t *salt, uint16_t saltlen,
                   uint32_t iter, uint16_t keylen, uint8_t *out,
-                  void (*cb)(uint16_t), uint32_t cb_ms_ivl) {
+                  void (*cb)(uint16_t bits, void *user),
+                  uint32_t cb_ms_ivl, void *user) {
+
   uint8_t digtmp[AVR_DEPO_PBKDF2_DIGEST_BYTES];
   uint8_t *p;
   uint8_t itmp[4];
@@ -67,7 +69,7 @@ int crypto_pbkdf2(const char *pass, uint16_t passlen,
 
     for(j = 1; j < iter; j++) {
       if(cb != NULL && (ADP_ts_millis() - t >= cb_ms_ivl)) {
-        cb(byte_progress(keylen-tkeylen, cplen, j, iter));
+        cb(byte_progress(keylen-tkeylen, cplen, j, iter), user);
         t = ADP_ts_millis();
       }
       //HMAC(digest, pass, passlen, digtmp, mdlen, digtmp, NULL);

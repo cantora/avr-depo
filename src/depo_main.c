@@ -23,10 +23,11 @@ static void err(const char *msg) {
   g_aborted = 1;
 }
 
-static void generate_update(uint16_t bits) {
+static void generate_update(uint16_t bits, void *user) {
   static uint8_t state = 0;
   float percent;
   int i;
+  (void)(user);
 
   ADP_display_clear();
   ADP_display_cursor_set(0, 0);
@@ -66,8 +67,8 @@ static int generate_key(uint8_t *key) {
                    (const uint8_t *) AVR_DEPO_config_pbkdf2_salt,
                    AVR_DEPO_config_pbkdf2_saltlen,
                    AVR_DEPO_config_pbkdf2_rounds,
-                   KEYLEN, key,
-                   generate_update, 500) != 0)
+                   KEYLEN, key, generate_update,
+                   500, user) != 0)
     return -1;
 
   return 0;
@@ -83,25 +84,61 @@ static int check_display_dims() {
   return 0;
 }
 
-static void action_gen(const uint8_t *key) {
-  uint8_t alias[64];
-  uint8_t name[64];
+static int do_action_gen(const uint8_t *seed, uint16_t seedlen,
+                         schema_id sid, uint16_t len) {
+  struct schema sch;
+
+  if(schema_init(&sch, sid, len) != 0)
+    return -1;
+
+  //if(crypto_gen(seed, seedlen, &sch, 
+}
+
+static int action_gen(const uint8_t *key) {
+  uint8_t buf[128];
+  uint16_t buf_len, buf_len2;
   uint16_t iteration;
-  size_t alias_len, name_len;
 
   ADP_display_clear();
   display_print(0, 0, "alias:");
-  alias_len = ui_input(6, 0, alias, sizeof(alias), 0);
+  buf_len = ui_input(6, 0, buf, 63, 0);
+  if(buf_len > 63) /* overflow paranoia ;) */
+    return -1;
 
-  ADP_display_clear();
-  display_print(0, 0, "name:");
-  name_len = ui_input(5, 0, name, sizeof(name), 0);
+  while(1) {
+    ADP_display_clear();
+    display_print(0, 0, "name:");
+    buf_len2 = ui_input(5, 0, buf+buf_len, 63, 0);
+    if(buf_len2 >= 3)
+      break;
+   
+    ADP_display_clear();
+    display_print_chunk(0, 0, "name < 3 chars");
+    ADP_delay(1500);
+  }
+  if(buf_len2 > 63)
+    return -1;
+  buf_len += buf_len2;
 
   ADP_display_clear();
   display_print(0, 0, "n:");
-  iteration = ui_input_n(2, 0, 1, 99, 1);
+  iteration = (uint16_t) ui_input_n(2, 0, 1, 29999, 1);
+#ifndef __BYTE_ORDER__
+#  error expected __BYTE_ORDER__ to be defined!
+#endif
+  /* we store the iteration in big endian format */
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  buf[buf_len++] = (iteration >> 8) && 0xff;
+  buf[buf_len++] = iteration && 0xff;
+#else
+  buf[buf_len++] = iteration && 0xff;
+  buf[buf_len++] = (iteration >> 8) && 0xff;
+#endif
 
-  ADP_delay(2000);
+  if(buf_len > sizeof(buf))
+    return -1;
+
+  return do_action_gen(buf, buflen, SCHEMA_ID_HEX, 8);
 }
 
 static uint8_t depo_loop(const uint8_t *key) {
