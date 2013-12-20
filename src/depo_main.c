@@ -73,7 +73,7 @@ static int generate_key(uint8_t *key) {
   return 0;
 }
 
-int check_display_dims() {
+static int check_display_dims() {
   uint16_t rows, cols;
 
   display_dims(&cols, &rows);
@@ -83,7 +83,28 @@ int check_display_dims() {
   return 0;
 }
 
-uint8_t depo_loop(uint8_t *key) {
+static void action_gen(const uint8_t *key) {
+  uint8_t alias[64];
+  uint8_t name[64];
+  uint16_t iteration;
+  size_t alias_len, name_len;
+
+  ADP_display_clear();
+  display_print(0, 0, "alias:");
+  alias_len = ui_input(6, 0, alias, sizeof(alias), 0);
+
+  ADP_display_clear();
+  display_print(0, 0, "name:");
+  name_len = ui_input(5, 0, name, sizeof(name), 0);
+
+  ADP_display_clear();
+  display_print(0, 0, "n:");
+  iteration = ui_input_n(2, 0, 1, 99, 1);
+
+  ADP_delay(2000);
+}
+
+static uint8_t depo_loop(const uint8_t *key) {
   uint8_t choice;
   const char *actions[] = {
 #define DEPO_ACTION_GEN 0
@@ -99,7 +120,7 @@ uint8_t depo_loop(uint8_t *key) {
 
     switch(choice) {
     case DEPO_ACTION_GEN:
-      /* not implemented yet */
+      action_gen(key);
       break;
     case DEPO_ACTION_SRVR:
       /* not implemented yet */

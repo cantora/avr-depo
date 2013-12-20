@@ -4,13 +4,10 @@
 #include "display.h"
 #include "util.h"
 #include "btn.h"
+#include "selector.h"
 
 static const uint32_t INPUT_CHAR_OFFSET = 0x20;
 static const uint32_t INPUT_CHAR_RANGE = 0x80-2-0x20;
-
-static void selector_set(uint32_t val, uint32_t range) {
-  ADP_selector_set(range*1000UL + val);
-}
 
 static inline uint16_t print_input(uint8_t *data, uint8_t len,
                                uint16_t col_space, uint8_t opts) {
@@ -56,15 +53,15 @@ static void ui_input_down(struct ui_input_state *state,
 
   if((state->delete_state & 1) == 0) {
     state->delete_state = 1;
-    ADP_selector_set(UI_INPUT_DELETE_START_POS);
+    selector_set_u(UI_INPUT_DELETE_START_POS);
     state->delete_amt = 0;
   }
 
-  amt = UI_INPUT_DELETE_START_POS - ADP_selector_position();
+  amt = UI_INPUT_DELETE_START_POS - selector_position_u();
   if(amt < UI_INPUT_DELETE_START_POS) {
     if(amt > state->i) {
       amt = state->i;
-      ADP_selector_set(UI_INPUT_DELETE_START_POS - amt);
+      selector_set_u(UI_INPUT_DELETE_START_POS - amt);
     }
     if(amt != state->delete_amt) {
       state->delete_amt = amt;
@@ -79,7 +76,7 @@ static void ui_input_down(struct ui_input_state *state,
   }
   else {
     state->delete_state |= 2;
-    ADP_selector_set(UI_INPUT_DELETE_START_POS);
+    selector_set_u(UI_INPUT_DELETE_START_POS);
   }
 }
 
@@ -93,7 +90,7 @@ static uint8_t ui_input_not_down(struct ui_input_state *state,
 
   if(state->delete_state & 1) {
     state->delete_state ^= 1;
-    selector_set(state->pos - INPUT_CHAR_OFFSET, INPUT_CHAR_RANGE);
+    selector_set_range(state->pos - INPUT_CHAR_OFFSET, INPUT_CHAR_RANGE);
   }
 
   if((state->delete_state & 2) && btn_state_released()) {
@@ -102,7 +99,7 @@ static uint8_t ui_input_not_down(struct ui_input_state *state,
     btn_state_init();
   }
   else {
-    pos = INPUT_CHAR_OFFSET + (ADP_selector_position() % INPUT_CHAR_RANGE);
+    pos = INPUT_CHAR_OFFSET + (selector_position_u() % INPUT_CHAR_RANGE);
 
     if(pos != state->pos || state->refresh) {
       state->pos = pos;
@@ -145,7 +142,7 @@ size_t ui_input(uint16_t col, uint16_t row, /* starting col,row of interaction *
   state.data = data;
   state.pos = 0;
 
-  selector_set(0x61 - INPUT_CHAR_OFFSET, INPUT_CHAR_RANGE);
+  selector_set_range(0x61 - INPUT_CHAR_OFFSET, INPUT_CHAR_RANGE);
   btn_state_init();
 
   for(state.i = 0; state.i < len; state.i++) {
@@ -187,7 +184,7 @@ uint8_t ui_menu(const char **items, size_t n_items) {
   prev_pos = 1;
   pos = 0;
   page = 0;
-  selector_set(pos, n_items);
+  selector_set_range(pos, n_items);
   btn_state_init();
 
   while(1) {
@@ -212,10 +209,53 @@ uint8_t ui_menu(const char **items, size_t n_items) {
     }
 
     btn_state_update();
-    pos = ADP_selector_position() % n_items;
+    pos = selector_position_u() % n_items;
     pos = (-pos + n_items) % n_items;
   }
 
   return pos;
 }
 
+int32_t ui_input_n(uint16_t col, uint16_t row,
+                   int32_t min, int32_t max,
+                   int32_t start) {
+  int32_t pos, prev_pos;
+  uint16_t cols, rows;
+
+  if(max <= min)
+    return start;
+
+  if(start < min)
+    start = min;
+  else if(start > max)
+    start = max;
+
+  display_dims(&cols, &rows);
+  pos = start;
+  prev_pos = pos+1;
+  selector_set_s(pos);
+  btn_state_init();
+
+  while(1) {
+    if(pos != prev_pos) {
+      display_clear_cols(col, row);
+      ADP_display_cursor_set(col, row);
+      display_print_n(col, row, pos, 10);
+      prev_pos = pos;
+    }
+
+    if(btn_state_released())
+      return pos;
+
+    btn_state_update();
+    pos = selector_position_s();
+    if(pos < min) {
+      pos = min;
+      selector_set_s(pos);
+    }
+    else if(pos > max) {
+      pos = max;
+      selector_set_s(pos);
+    }
+  }
+}
