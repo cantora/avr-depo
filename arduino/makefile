@@ -31,7 +31,9 @@ $(OBJDIR)/%.o: $(AVR_DEPO_SRC)/%.c $(COMMON_DEPS) | $(OBJDIR)
 
 .PHONY: clean-deps
 clean-deps:
-	find $(AVR_DEPO_PLATFORM_BUILD_DIR) -type f -iname '*.d' -delete
+	if [ -d $(AVR_DEPO_PLATFORM_BUILD_DIR) ]; then \
+		find $(AVR_DEPO_PLATFORM_BUILD_DIR) -type f -iname '*.d' -delete; \
+	fi
 
 clean: clean-deps clean-libs
 
