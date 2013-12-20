@@ -58,5 +58,8 @@ $(AVR_DEPO_PLATFORM_BUILD_DIR)/avr-crypto-lib.a: $(AVR_CRYPTO_LIB_DIR) $(CRYPTO_
 .PHONY: clean-libs
 clean-libs:
 	for mod in '$(AVR_CRYPTO_LIB_MODS)'; do \
-		find $(AVR_DEPO_PLATFORM_BUILD_DIR)/$$mod -type f -iname '*.o' -delete; \
+		dir=$(AVR_DEPO_PLATFORM_BUILD_DIR)/$$mod; \
+		if [ -d $$dir ]; then \
+			find  -type f -iname '*.o' -delete; \
+		fi; \
 	done
