@@ -174,3 +174,48 @@ size_t ui_input(uint16_t col, uint16_t row, /* starting col,row of interaction *
 done:
   return state.i;
 }
+
+uint8_t ui_menu(const char **items, size_t n_items) {
+  uint16_t i, cols, rows, idx;
+  uint8_t pos, prev_pos, page;
+
+  if(n_items < 1)
+    return 0;
+
+  display_dims(&cols, &rows);
+
+  prev_pos = 1;
+  pos = 0;
+  page = 0;
+  selector_set(pos, n_items);
+  btn_state_init();
+
+  while(1) {
+    if(prev_pos != pos) {
+      page = (pos/rows);
+      ADP_display_clear();
+      for(i = 0; i < rows; i++) {
+        idx = (page*rows)+i;
+        if(idx >= n_items)
+          break;
+        if(idx == pos) {
+          ADP_display_cursor_set(0, i);
+          ADP_display_write('*');
+        }
+        display_print(1, i, items[idx]);
+      }
+      prev_pos = pos;
+    }
+
+    if(btn_state_released()) {
+      break;
+    }
+
+    btn_state_update();
+    pos = ADP_selector_position() % n_items;
+    pos = (-pos + n_items) % n_items;
+  }
+
+  return pos;
+}
+

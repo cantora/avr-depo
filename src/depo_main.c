@@ -83,8 +83,38 @@ int check_display_dims() {
   return 0;
 }
 
+uint8_t depo_loop(uint8_t *key) {
+  uint8_t choice;
+  const char *actions[] = {
+#define DEPO_ACTION_GEN 0
+    "gen",
+#define DEPO_ACTION_SRVR 1
+    "srvr",
+#define DEPO_ACTION_QUIT 2
+    "quit"
+  };
+
+  while(1) {
+    choice = ui_menu(actions, 3);
+
+    switch(choice) {
+    case DEPO_ACTION_GEN:
+      /* not implemented yet */
+      break;
+    case DEPO_ACTION_SRVR:
+      /* not implemented yet */
+      break;
+    case DEPO_ACTION_QUIT:
+      return 0;
+    default:
+      ADP_debug_print("invalid choice\r\n");
+      return -1;
+    }
+  }
+}
+
 void depo_main() {
-  uint8_t key[64];
+  uint8_t key[KEYLEN];
 
   if(g_aborted != 0)
     return;
@@ -94,12 +124,17 @@ void depo_main() {
     return;
   }
 
-  if(generate_key(key) != 0) {
-    err("error in password entry");
-    return;
-  }
+  while(1) {
+    if(generate_key(key) != 0) {
+      err("error in password entry");
+      return;
+    }
 
-  ADP_debug_print("generated key\r\n");
+    if(depo_loop(key) != 0) {
+      err("error in depo loop");
+      return;
+    }
+  }
 
   err("unknown failure");
 }
