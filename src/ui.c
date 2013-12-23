@@ -259,3 +259,37 @@ int32_t ui_input_n(uint16_t col, uint16_t row,
     }
   }
 }
+
+void ui_processing_init(struct ui_processing *proc, uint32_t total) {
+  proc->state = 0;
+  proc->total = total;
+}
+
+void ui_processing_update(uint32_t done, void *user) {
+  float percent;
+  int i;
+  struct ui_processing *proc = (struct ui_processing *) user;
+  
+  ADP_display_clear();
+  ADP_display_cursor_set(0, 0);
+
+  for(i = 0; i <= proc->state; i++)  
+    ADP_display_write('>');
+  for(i = 0; i < 2-proc->state; i++)
+    ADP_display_write(' ');
+
+  percent = done/((float) proc->total);
+  display_print_n(4, 0, percent*100, 10);
+  ADP_display_write('%');
+
+  proc->state = (proc->state+1)%3;
+}
+
+void ui_wait_for_button_release() {
+  btn_state_init();
+  while(1) {
+    btn_state_update();
+    if(btn_state_released())
+      break;
+  }
+}

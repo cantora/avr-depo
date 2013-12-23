@@ -14,7 +14,7 @@ inline void display_clear_cols(uint16_t col, uint16_t row) {
 }
 
 void display_print(uint16_t col, uint16_t row, const char *s) {
-  int i;
+  uint16_t i;
   uint16_t cols, rows;
 
   display_dims(&cols, &rows);
@@ -24,6 +24,16 @@ void display_print(uint16_t col, uint16_t row, const char *s) {
       break;
     ADP_display_write(s[i]);
   }
+}
+
+void display_nprint(uint16_t col, uint16_t row, uint16_t slen, const char *s) {
+  uint16_t i;
+  uint16_t cols, rows;
+
+  display_dims(&cols, &rows);
+  ADP_display_cursor_set(col, row);
+  for(i = 0; (col+i) < cols && i < slen; i++)
+    ADP_display_write(s[i]);
 }
 
 void display_print_n(uint16_t col, uint16_t row, uint32_t n, int radix) {

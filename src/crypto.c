@@ -1,33 +1,43 @@
 #include "crypto.h"
 #include "avr-depo-config.h"
 #include "schema.h"
-
-void crypto_gen_update(uint16_t bits, void *user) {
-  void (*cb)(uint8_t percent);
-  uint16_t total_bits;
-  float percent;
-
-  total_bits = AVR_DEP_PBKDF2_DIGEST_BYTES << 8;
-  percent = bits/((float) total_bits);
-  cb = user;
-
-  cb(percent*100);
-}
+#include "util.h"
+#include "avr-depo.h"
 
 int crypto_gen(uint8_t *seed, uint16_t seedlen,
-               const struct schema *sch, const uint8_t *out,
-               void (*cb)(uint8_t percent), uint32_t cb_ms_ivl) {
-  if(sch->keylen < 1)
+               const struct schema *sch, uint8_t *out,
+               void (*cb)(uint32_t bits, void *),
+               uint32_t cb_ms_ivl, void *user) {
+  uint8_t *key;
+  int status;
+
+  if(schema_keylen(sch) < 1)
     return -1;
 
-  if(crypto_pbkdf2((const char *) buf, buf_len,
+  if(schema_keylen(sch) > 128)
+    return -1;
+  
+  key = malloc(schema_keylen(sch) * sizeof(uint8_t));
+  if(key == NULL)
+    return -1;
+
+  status = 0;
+  if(crypto_pbkdf2((const char *) seed, seedlen,
                    (const uint8_t *) AVR_DEPO_config_pbkdf2_salt,
                    AVR_DEPO_config_pbkdf2_saltlen,
                    AVR_DEPO_config_gen_pbkdf2_rounds,
-                   sch->keylen, sch->key,
-                   generate_update, cb_ms_ivl, cb) != 0)
-    return -1;
+                   sch->keylen, key,
+                   cb, cb_ms_ivl, user) != 0) {
+    status = -1;
+    goto done;
+  }
 
-  return schema_run(sch, out);
+  if(schema_run(sch, key, out) != 0) {
+    status = -1;
+    goto done;
+  }
+
+done:
+  free(key);
+  return status;
 }
-

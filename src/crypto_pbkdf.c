@@ -3,9 +3,9 @@
 
 #include <avr-crypto-lib/hmac-sha1/hmac-sha1.h>
 
-static inline uint16_t byte_progress(int32_t bytes, int32_t cplen, int32_t j, uint32_t iter) {
+static inline uint32_t byte_progress(int32_t bytes, int32_t cplen, int32_t j, uint32_t iter) {
   float block_progress;
-  uint16_t block_bits;
+  uint32_t block_bits;
 
   block_progress = j/((float) iter);
   block_bits = block_progress*(cplen << 3);
@@ -19,7 +19,7 @@ static inline uint16_t byte_progress(int32_t bytes, int32_t cplen, int32_t j, ui
 int crypto_pbkdf2(const char *pass, uint16_t passlen,
                   const uint8_t *salt, uint16_t saltlen,
                   uint32_t iter, uint16_t keylen, uint8_t *out,
-                  void (*cb)(uint16_t bits, void *user),
+                  void (*cb)(uint32_t bits, void *user),
                   uint32_t cb_ms_ivl, void *user) {
 
   uint8_t digtmp[AVR_DEPO_PBKDF2_DIGEST_BYTES];

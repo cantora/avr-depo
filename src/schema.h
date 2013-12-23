@@ -1,8 +1,9 @@
 #ifndef AVR_DEPO_schema_h
 #define AVR_DEPO_schema_h
 
+#include <stdint.h>
+
 struct schema {
-  uint8_t *key;
   uint16_t keylen;
   uint16_t len;
   uint8_t id;
@@ -12,11 +13,10 @@ typedef enum {
   SCHEMA_ID_HEX = 0
 } schema_id;
 
-const char *schema_names[] {
-  "hex"
-};
+extern const char *schema_names[];
 
 int schema_init(struct schema *sch, schema_id sid, uint16_t len);
-int schema_run(const struct schema *sch, uint8_t *out);
+static inline uint16_t schema_keylen(const struct schema *sch) { return sch->keylen; }
+int schema_run(const struct schema *sch, const uint8_t *key, uint8_t *out);
 
 #endif /* AVR_DEPO_schema_h */
