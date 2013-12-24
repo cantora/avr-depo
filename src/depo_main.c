@@ -73,10 +73,11 @@ static int check_display_dims() {
 }
 
 static int action_gen(const uint8_t *key) {
+#define DEPO_ACTION_GEN_ITER_MIN 1
+  const char *yesno[] = {"no", "yes"};
   uint8_t buf[128];
   uint8_t result[64];
-  uint16_t buf_len, buf_len2;
-  uint16_t iteration;
+  uint16_t buf_len, buf_len2, do_options, iteration;
   struct schema sch;
   struct ui_processing proc;
 
@@ -102,8 +103,20 @@ static int action_gen(const uint8_t *key) {
   buf_len += buf_len2;
 
   ADP_display_clear();
-  display_print(0, 0, "n:");
-  iteration = (uint16_t) ui_input_n(2, 0, 1, 29999, 1);
+  display_print(0, 0, "opts?:");
+  
+  do_options = ui_option(6, 0, yesno, 2);
+  if(do_options != 0) {
+    ADP_display_clear();
+    display_print(0, 0, "n:");
+    iteration = (uint16_t) ui_input_n(2, 0, 
+                                      DEPO_ACTION_GEN_ITER_MIN,
+                                      29999,
+                                      DEPO_ACTION_GEN_ITER_MIN);
+  }
+  else {
+    iteration = DEPO_ACTION_GEN_ITER_MIN;
+  }
 
   /* we write the iteration in big endian format */
   buf[buf_len++] = iteration/256;

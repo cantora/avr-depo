@@ -260,6 +260,38 @@ int32_t ui_input_n(uint16_t col, uint16_t row,
   }
 }
 
+uint16_t ui_option(uint16_t col, uint16_t row, const char **options, uint16_t n_options) {
+  uint16_t width, cols, rows;
+  uint8_t pos, prev_pos;
+
+  if(n_options < 1)
+    return 0;
+
+  display_dims(&cols, &rows);
+
+  prev_pos = 1;
+  pos = 0;
+  selector_set_range(pos, n_options);
+  btn_state_init();
+
+  while(1) {
+    if(prev_pos != pos) {
+      width = display_print(col, row, options[pos]);
+      display_clear_cols(col+width, row);
+      prev_pos = pos;
+    }
+
+    if(btn_state_released()) {
+      break;
+    }
+
+    btn_state_update();
+    pos = selector_position_u() % n_options;
+  }
+
+  return pos;
+}
+
 void ui_processing_init(struct ui_processing *proc, uint32_t total) {
   proc->state = 0;
   proc->total = total;
