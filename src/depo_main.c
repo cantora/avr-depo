@@ -150,7 +150,7 @@ static int action_gen(const uint8_t *key) {
     goto done;
   }
 
-  ADP_debug_nprint(rsize, result);
+  ADP_debug_nprint(rsize, (const char *) result);
   ADP_debug_print("\n\r");
   ADP_display_clear();
   display_nprint(0, 0, rsize, (const char *) result);
