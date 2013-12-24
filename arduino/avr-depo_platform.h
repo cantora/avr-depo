@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 void serial_print(const char *);
+void serial_nprint(size_t, const char *);
 void lcd_set_cursor(uint16_t, uint16_t);
 void lcd_cursor(uint8_t);
 void lcd_blink(uint8_t);
@@ -21,6 +22,7 @@ uint32_t arduino_millis();
 #define ADP_selector_set(pos) encoder_set(pos)
 #define ADP_button_check() button_check()
 #define ADP_debug_print(str) serial_print(str)
+#define ADP_debug_nprint(sz, str) serial_nprint(sz, str)
 #define ADP_display_dims(cols_p, rows_p) \
   do { \
     *(cols_p) = 16; \

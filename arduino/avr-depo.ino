@@ -19,6 +19,10 @@ void serial_print(const char *s) {
   Serial.print(s);
 }
 
+void serial_nprint(size_t sz, const char *s) {
+  Serial.write((const uint8_t *) s, sz);
+}
+
 void lcd_set_cursor(uint16_t col, uint16_t row) {
   g_lcd.setCursor(col, row);
 }

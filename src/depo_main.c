@@ -74,10 +74,13 @@ static int check_display_dims() {
 
 static int action_gen(const uint8_t *key) {
 #define DEPO_ACTION_GEN_ITER_MIN 1
+#define DEPO_ACTION_GEN_SIZE_MIN 6
+#define DEPO_ACTION_GEN_SIZE_DEFAULT 12
   const char *yesno[] = {"no", "yes"};
   uint8_t buf[128];
-  uint8_t result[64];
-  uint16_t buf_len, buf_len2, do_options, iteration;
+  uint8_t *result;
+  uint16_t buf_len, buf_len2, do_options, iteration, rsize;
+  int status;
   struct schema sch;
   struct ui_processing proc;
 
@@ -108,6 +111,12 @@ static int action_gen(const uint8_t *key) {
   do_options = ui_option(6, 0, yesno, 2);
   if(do_options != 0) {
     ADP_display_clear();
+    display_print(0, 0, "sz:");
+    rsize = (uint16_t) ui_input_n(3, 0, 
+                                  DEPO_ACTION_GEN_SIZE_MIN,
+                                  128,
+                                  DEPO_ACTION_GEN_SIZE_DEFAULT);
+    ADP_display_clear();
     display_print(0, 0, "n:");
     iteration = (uint16_t) ui_input_n(2, 0, 
                                       DEPO_ACTION_GEN_ITER_MIN,
@@ -115,28 +124,41 @@ static int action_gen(const uint8_t *key) {
                                       DEPO_ACTION_GEN_ITER_MIN);
   }
   else {
+    rsize = DEPO_ACTION_GEN_SIZE_DEFAULT;
     iteration = DEPO_ACTION_GEN_ITER_MIN;
   }
+
+  /* some sanity checks for extra security */
+  if(buf_len > sizeof(buf) || rsize < 1)
+    return -1;
 
   /* we write the iteration in big endian format */
   buf[buf_len++] = iteration/256;
   buf[buf_len++] = iteration % 256;
 
-  if(buf_len > sizeof(buf))
+  if(schema_init(&sch, SCHEMA_ID_HEX, rsize) != 0)
     return -1;
 
-  if(schema_init(&sch, SCHEMA_ID_HEX, 8) != 0)
+  result = malloc(rsize*sizeof(uint8_t));
+  if(result == NULL)
     return -1;
 
+  status = 0;
   ui_processing_init(&proc, schema_keylen(&sch) << 3);
-  if(crypto_gen(buf, buf_len, &sch, result, ui_processing_update, 500, &proc) != 0)
-    return -1;
+  if(crypto_gen(buf, buf_len, &sch, result, ui_processing_update, 500, &proc) != 0) {
+    status = -1;
+    goto done;
+  }
 
+  ADP_debug_nprint(rsize, result);
+  ADP_debug_print("\n\r");
   ADP_display_clear();
-  display_nprint(0, 0, 8, (const char *) result);
+  display_nprint(0, 0, rsize, (const char *) result);
   ui_wait_for_button_release();
 
-  return 0;
+done:
+  free(result);
+  return status;
 }
 
 static uint8_t depo_loop(const uint8_t *key) {

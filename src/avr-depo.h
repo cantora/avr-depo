@@ -23,6 +23,10 @@ extern "C" {
 #  error "platform: define a void ADP_debug_print(const char *)"
 #endif
 
+#ifndef ADP_debug_nprint
+#  error "platform: define a void ADP_debug_nprint(size_t sz, const char *)"
+#endif
+
 #ifndef ADP_display_dims
 #  error "platform: define a void ADP_display_dims(uint16_t *cols, uint16_t *rows) "
 #endif
