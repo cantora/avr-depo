@@ -112,9 +112,12 @@ static int action_gen(const uint8_t *key) {
   if(do_options != 0) {
     ADP_display_clear();
     display_print(0, 0, "sz:");
+    /* TODO: allow size > 16, and create passwords
+     * of size > 16 by creating (size/16)+1 passwords and
+     * concatenating them. */
     rsize = (uint16_t) ui_input_n(3, 0, 
                                   DEPO_ACTION_GEN_SIZE_MIN,
-                                  128,
+                                  16,
                                   DEPO_ACTION_GEN_SIZE_DEFAULT);
     ADP_display_clear();
     display_print(0, 0, "n:");

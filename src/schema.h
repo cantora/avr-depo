@@ -10,7 +10,8 @@ struct schema {
 };
 
 typedef enum {
-  SCHEMA_ID_HEX = 0
+  SCHEMA_ID_HEX = 0,
+  SCHEMA_ID_PW0
 } schema_id;
 
 extern const char *schema_names[];
