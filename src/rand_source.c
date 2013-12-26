@@ -25,7 +25,7 @@ void rand_source_free(struct rand_source *src) {
 }
 
 static int data_empty(const struct rand_source *src) {
-  return ((src->data_idx+sizeof(uint32_t)) >= AVR_DEPO_PBKDF2_DIGEST_BYTES);
+  return ((src->data_idx+sizeof(uint32_t)) > AVR_DEPO_PBKDF2_DIGEST_BYTES);
 }
 
 static void data_refresh(struct rand_source *src) {
@@ -40,6 +40,7 @@ uint32_t rand_source_uint32(struct rand_source *src) {
   if(data_empty(src))
     data_refresh(src);
 
+  ADP_debug_print("use 1 32 bit rand byte\n\r");
   v = *((uint32_t *) (src->data+src->data_idx));
   src->data_idx += 4;
   return v;
@@ -55,6 +56,8 @@ uint32_t rand_source_uint(struct rand_source *src, uint32_t range) {
   /* wait for an int in the right range to avoid modulo bias */
   do {
     v = rand_source_uint32(src);
+    if(v >= max)
+      ADP_debug_print("random value exceeded max\n\r");
   } while(v >= max);
 
   return v % range;
