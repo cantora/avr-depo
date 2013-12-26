@@ -3,88 +3,123 @@
 
 #include <avr-crypto-lib/hmac-sha1/hmac-sha1.h>
 
-static inline uint32_t byte_progress(int32_t bytes, int32_t cplen, int32_t j, uint32_t iter) {
+int crypto_pbkdf2_init(struct crypto_pbkdf2 *kdf,
+                       uint32_t iters_per_block,
+                       const uint8_t *pass, uint16_t passlen,
+                       const uint8_t *salt, uint16_t saltlen,
+                       void (*cb)(uint32_t bits, void *user),
+                       uint32_t cb_ms_ivl, void *user) {
+  if(saltlen < 1 || passlen < 1 || iters_per_block < 1)
+    return -1;
+
+  kdf->salt_itmp = malloc((saltlen+4)*sizeof(uint8_t));
+  if(kdf->salt_itmp == NULL)
+    return -1;
+
+  kdf->i = 1;
+  kdf->iter = iters_per_block;
+  kdf->pass = pass;
+  kdf->salt = salt;
+  kdf->passlen = passlen;
+  kdf->saltlen = saltlen;
+  kdf->cb = cb;
+  kdf->cb_ms_ivl = cb_ms_ivl;
+  kdf->t = ADP_ts_millis();
+  kdf->user = user;
+
+  memcpy(kdf->salt_itmp, kdf->salt, kdf->saltlen);
+
+  return 0;
+}
+
+void crypto_pbkdf2_free(struct crypto_pbkdf2 *kdf) {
+  free(kdf->salt_itmp);
+}
+
+inline uint16_t crypto_pbkdf2_blocklen(struct crypto_pbkdf2 *kdf) {
+  return AVR_DEPO_PBKDF2_DIGEST_BYTES;
+}
+
+static inline uint32_t bit_progress(const struct crypto_pbkdf2 *kdf, uint32_t iter) {
   float block_progress;
   uint32_t block_bits;
 
-  block_progress = j/((float) iter);
-  block_bits = block_progress*(cplen << 3);
+  block_progress = iter/((float) kdf->iter);
+  block_bits = block_progress*(AVR_DEPO_PBKDF2_DIGEST_BYTES << 3);
 
-  return (bytes << 3) + block_bits;
+  return ((kdf->i-1)*AVR_DEPO_PBKDF2_DIGEST_BYTES << 3) + block_bits;
+}
+
+void crypto_pbkdf2_block(struct crypto_pbkdf2 *kdf, uint8_t *out) {
+  uint8_t digtmp[AVR_DEPO_PBKDF2_DIGEST_BYTES];
+  uint8_t itmp[4];
+  int32_t j, k;
+  hmac_sha1_ctx_t hctx;
+
+  itmp[0] = (uint8_t)((kdf->i >> 24) & 0xff);
+  itmp[1] = (uint8_t)((kdf->i >> 16) & 0xff);
+  itmp[2] = (uint8_t)((kdf->i >> 8) & 0xff);
+  itmp[3] = (uint8_t)(kdf->i & 0xff);
+
+  hmac_sha1_init(&hctx, kdf->pass, kdf->passlen*8);
+  memcpy(kdf->salt_itmp + kdf->saltlen, itmp, 4);
+  hmac_sha1_lastBlock(&hctx, kdf->salt_itmp, (kdf->saltlen+4)*8);
+  hmac_sha1_final(digtmp, &hctx);
+  
+  memcpy(out, digtmp, AVR_DEPO_PBKDF2_DIGEST_BYTES);
+
+  for(j = 1; j < kdf->iter; j++) {
+    if(kdf->cb != NULL
+          && kdf->cb_ms_ivl > 0
+          && (ADP_ts_millis() - kdf->t >= kdf->cb_ms_ivl)) {
+      kdf->cb(bit_progress(kdf, j), kdf->user);
+      kdf->t = ADP_ts_millis();
+    }
+
+    hmac_sha1(digtmp, kdf->pass, kdf->passlen*8,
+              digtmp, AVR_DEPO_PBKDF2_DIGEST_BYTES*8);
+ 
+    for(k = 0; k < AVR_DEPO_PBKDF2_DIGEST_BYTES; k++)
+      out[k] ^= digtmp[k];
+  }
+
+  kdf->i++;
 }
 
 /* this function was ported from openssl to use avr-crypto-lib
  * functions. the license header present in that file can be found
  * at the end of this file */                                    
-int crypto_pbkdf2(const char *pass, uint16_t passlen,
+int crypto_pbkdf2(const uint8_t *pass, uint16_t passlen,
                   const uint8_t *salt, uint16_t saltlen,
                   uint32_t iter, uint16_t keylen, uint8_t *out,
                   void (*cb)(uint32_t bits, void *user),
                   uint32_t cb_ms_ivl, void *user) {
-
-  uint8_t digtmp[AVR_DEPO_PBKDF2_DIGEST_BYTES];
+  struct crypto_pbkdf2 kdf;
+  uint8_t buf[AVR_DEPO_PBKDF2_DIGEST_BYTES];
   uint8_t *p;
-  uint8_t itmp[4];
-  uint8_t salt_itmp[AVR_DEPO_PBKDF2_MAX_SALT_BYTES + 4];
-  int32_t cplen, j, k, tkeylen, mdlen;
-  uint32_t i, t;
-  hmac_sha1_ctx_t hctx; //HMAC_CTX hctx;
+  int32_t cplen, tkeylen;
 
-  i = 1;
-  if(saltlen > AVR_DEPO_PBKDF2_MAX_SALT_BYTES)
+  if(crypto_pbkdf2_init(&kdf, iter, pass, passlen, salt, 
+                        saltlen, cb, cb_ms_ivl, user) != 0)
     return -1;
 
-  t = ADP_ts_millis();
-  memcpy(salt_itmp, salt, saltlen);
-  mdlen = AVR_DEPO_PBKDF2_DIGEST_BYTES;
-
-  /*dont think i need to do this*/ /* init hmac context */ //HMAC_CTX_init(&hctx);
   p = out;
   tkeylen = keylen;
-  
+
   while(tkeylen) {
-    if(tkeylen > mdlen)
-      cplen = mdlen;
-    else
-      cplen = tkeylen;
-    /* We are unlikely to ever use more than 256 blocks (5120 bits!)
-     * but just in case...
-     */
-    itmp[0] = (uint8_t)((i >> 24) & 0xff);
-    itmp[1] = (uint8_t)((i >> 16) & 0xff);
-    itmp[2] = (uint8_t)((i >> 8) & 0xff);
-    itmp[3] = (uint8_t)(i & 0xff);
-    hmac_sha1_init(&hctx, pass, passlen*8); //HMAC_Init_ex(&hctx, pass, passlen, digest, NULL);
-    /*HMAC_Update(&hctx, salt, saltlen);
-     *HMAC_Update(&hctx, itmp, 4);
-     */
-    memcpy(salt_itmp + saltlen, itmp, 4);
-    hmac_sha1_lastBlock(&hctx, salt_itmp, (saltlen+4)*8);
-
-    /*HMAC_Final(&hctx, digtmp, NULL);
-     */
-    hmac_sha1_final(digtmp, &hctx);
-    
-    memcpy(p, digtmp, cplen);
-
-    for(j = 1; j < iter; j++) {
-      if(cb != NULL && (ADP_ts_millis() - t >= cb_ms_ivl)) {
-        cb(byte_progress(keylen-tkeylen, cplen, j, iter), user);
-        t = ADP_ts_millis();
-      }
-      //HMAC(digest, pass, passlen, digtmp, mdlen, digtmp, NULL);
-
-      hmac_sha1(digtmp, pass, passlen*8, digtmp, mdlen*8);
- 
-      for(k = 0; k < cplen; k++)
-        p[k] ^= digtmp[k];
+    if(tkeylen > AVR_DEPO_PBKDF2_DIGEST_BYTES) {
+      cplen = AVR_DEPO_PBKDF2_DIGEST_BYTES;
+      crypto_pbkdf2_block(&kdf, p);
     }
-
+    else {
+      cplen = tkeylen;
+      crypto_pbkdf2_block(&kdf, buf);
+      memcpy(p, buf, cplen);
+    }
+    
     tkeylen -= cplen;
-    i++;
     p += cplen;
   }
-  /* dont think i need to do this */ //HMAC_CTX_cleanup(&hctx);
 
   return 0;
 }

@@ -51,7 +51,7 @@ static int generate_key(uint8_t *key) {
 
   ui_processing_init(&proc, KEYLEN << 3);
   ADP_display_clear();
-  if(crypto_pbkdf2((const char *) pass, (uint16_t) len,
+  if(crypto_pbkdf2(pass, (uint16_t) len,
                    (const uint8_t *) AVR_DEPO_config_pbkdf2_salt,
                    AVR_DEPO_config_pbkdf2_saltlen,
                    AVR_DEPO_config_pbkdf2_rounds,
@@ -70,6 +70,10 @@ static int check_display_dims() {
     return 1;
 
   return 0;
+}
+
+static void action_gen_update(void *user) {
+  ui_processing_update(0, user);
 }
 
 static int action_gen(const uint8_t *key) {
@@ -139,16 +143,17 @@ static int action_gen(const uint8_t *key) {
   buf[buf_len++] = iteration/256;
   buf[buf_len++] = iteration % 256;
 
-  if(schema_init(&sch, SCHEMA_ID_HEX, rsize) != 0)
-    return -1;
+  schema_init(&sch, SCHEMA_ID_HEX, rsize,
+                 buf, buf_len, action_gen_update,
+                 500, &proc);
 
   result = malloc(rsize*sizeof(uint8_t));
   if(result == NULL)
     return -1;
 
+  ui_processing_init(&proc, 0);
   status = 0;
-  ui_processing_init(&proc, schema_keylen(&sch) << 3);
-  if(crypto_gen(buf, buf_len, &sch, result, ui_processing_update, 500, &proc) != 0) {
+  if(schema_run(&sch, result) != 0) {
     status = -1;
     goto done;
   }

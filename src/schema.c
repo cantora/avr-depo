@@ -2,6 +2,7 @@
 #include "util.h"
 #include "avr-depo.h"
 #include "rand_source.h"
+#include "avr-depo-config.h"
 
 #include <stdlib.h>
 
@@ -10,39 +11,61 @@ const char *schema_names[] = {
   "pw0"
 };
 
+static void schema_update(uint32_t bytes, void *user) {
+  struct schema *sch = (struct schema *) user;
+  (void)(bytes);
+
+  sch->cb(sch->user);
+}
+
 /************************************************************************
  ************************************************************************
  * schema which converts the generated key bytes into hex characters
  */
-static inline int schema_hex_init(struct schema *sch) {
-  if(sch->len < 1)
-    return -1;
-
-  sch->keylen = (sch->len >> 1); /* divide by two */
-  if(sch->len % 2 != 0)
-    sch->keylen++;
-
-  return 0;
-}
-
-static inline int schema_hex_run(const struct schema *sch,
-                                 const uint8_t *key, uint8_t *out) {
-  uint16_t i, len;
+static inline int schema_hex_run(const struct schema *sch, uint8_t *out) {
+  int status;
+  uint16_t i, len, len2;
+  uint8_t *newkey;
+  uint8_t odd;
 
   len = sch->len >> 1; /* divide by 2 */
-  if(len > sch->keylen)
+  if(sch->len % 2 != 0) {
+    odd = 1;
+    len2 = len+1;
+  }
+  else {
+    odd = 0;
+    len2 = len;
+  }
+
+  newkey = malloc(len2);
+  if(newkey == NULL)
     return -1;
 
+  if(crypto_pbkdf2(sch->key, sch->keylen,
+                   (const uint8_t *) AVR_DEPO_config_pbkdf2_salt,
+                   AVR_DEPO_config_pbkdf2_saltlen,
+                   AVR_DEPO_config_gen_pbkdf2_rounds,
+                   len2, newkey,
+                   schema_update, sch->cb_ms_ivl,
+                   (void *) sch) != 0) {
+    status = -1;
+    goto done;
+  }
+
   for(i = 0; i < len; i++)
-    util_byte_to_hex(key[i], out+(i*2));
+    util_byte_to_hex(newkey[i], out+(i*2));
 
   /* if an odd number of bytes are needed */
-  if(sch->len % 2 != 0)
-    util_msnibble_to_hex(key[i], out+(i*2));
+  if(odd)
+    util_msnibble_to_hex(newkey[i], out+(i*2));
 
+done:
+  free(newkey);
   return 0;
 }
 
+#if 0
 /************************************************************************
  ************************************************************************
  * schema which uses the key bytes to make random decisions required for
@@ -95,39 +118,33 @@ static inline int schema_pw0_run(const struct schema *sch,
 
   return 0;  
 }
+#endif
 
-int schema_init(struct schema *sch, schema_id sid, uint16_t len) {
-  int status;
-
+void schema_init(struct schema *sch, schema_id sid, uint16_t len,
+                 uint8_t *key, uint16_t keylen,
+                 void (*cb)(void *), uint32_t cb_ms_ivl,
+                 void *user) {
+  sch->key = key;
+  sch->keylen = keylen;
   sch->len = len;
   sch->id = sid;
-
-#define SCHEMA_INIT_CASE(schema_id) \
-  case schema_id: \
-    status = schema_##schema_id##_init(sch); \
-    break;
-
-  switch(sch->id) {
-  SCHEMA_INIT_CASE(SCHEMA_ID_HEX)
-  SCHEMA_INIT_CASE(SCHEMA_ID_PW0)
-  default:
-    status = -1;
-  }
-
-  return status;
+  sch->cb = cb;
+  sch->cb_ms_ivl = cb_ms_ivl;
+  sch->user = user;
 }
 
 /* out must have enough space for sch->len bytes */
-int schema_run(const struct schema *sch, const uint8_t *key, uint8_t *out) {
+int schema_run(const struct schema *sch, uint8_t *out) {
   int status;
 
+#define SCHEMA_RUN_CASE(schema_id, name) \
+  case schema_id: \
+    status = schema_##name##_run(sch, out); \
+    break
+
   switch(sch->id) {
-  case SCHEMA_ID_HEX:
-    status = schema_hex_run(sch, key, out);
-    break;
-  case SCHEMA_ID_PW0:
-    status = schema_pw0_run(sch, key, out);
-    break;
+  SCHEMA_RUN_CASE(SCHEMA_ID_HEX, hex);
+  /*SCHEMA_RUN_CASE(SCHEMA_ID_PW0, pw0);*/
   default:
     status = -1;
   }

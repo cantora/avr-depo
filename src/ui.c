@@ -310,9 +310,11 @@ void ui_processing_update(uint32_t done, void *user) {
   for(i = 0; i < 2-proc->state; i++)
     ADP_display_write(' ');
 
-  percent = done/((float) proc->total);
-  display_print_n(4, 0, percent*100, 10);
-  ADP_display_write('%');
+  if(proc->total > 0) {
+    percent = done/((float) proc->total);
+    display_print_n(4, 0, percent*100, 10);
+    ADP_display_write('%');
+  }
 
   proc->state = (proc->state+1)%3;
 }

@@ -1,22 +1,55 @@
 #include "rand_source.h"
+#include "crypto.h"
+#include "avr-depo-config.h"
 
-void rand_source_init(struct rand_source *src,
-                      const uint8_t *bytes, uint16_t len) {
-  src->idx = 0;
-  src->len = len;
-  src->bytes = bytes;
+int rand_source_init(struct rand_source *src,
+                     const uint8_t *bytes, uint16_t len) {
+
+  if(crypto_pbkdf2_init(&src->kdf, AVR_DEPO_config_gen_pbkdf2_rounds,
+                        bytes, len,
+                        (const uint8_t *) AVR_DEPO_config_pbkdf2_salt,
+                        AVR_DEPO_config_pbkdf2_saltlen,
+                        NULL, 0, NULL) != 0)
+    return -1;
+
+  src->data_idx = AVR_DEPO_PBKDF2_DIGEST_BYTES;
+
+  return 0;
 }
 
-int rand_source_empty(const struct rand_source *src) {
-  return ((src->idx+sizeof(uint32_t)) >= src->len);
+static int data_empty(const struct rand_source *src) {
+  return ((src->data_idx+sizeof(uint32_t)) >= AVR_DEPO_PBKDF2_DIGEST_BYTES);
+}
+
+static void data_refresh(struct rand_source *src) {
+  crypto_pbkdf2_block(&src->kdf, src->data);
+  src->data_idx = 0;
 }
 
 uint32_t rand_source_uint32(struct rand_source *src) {
   uint32_t v;
 
-  v = *((uint32_t *) (src->bytes+src->idx));
-  src->idx += 4;
+  if(data_empty(src))
+    data_refresh(src);
+
+  v = *((uint32_t *) (src->data+src->data_idx));
+  src->data_idx += 4;
   return v;
+}
+
+uint32_t rand_source_uint(struct rand_source *src, uint32_t range) {
+  uint32_t max, v;
+
+  if(range == 0)
+    return 0;
+
+  max = 0xffffffffUL - (0xffffffffUL % range);
+  /* wait for an int in the right range to avoid modulo bias */
+  do {
+    v = rand_source_uint32(src);
+  } while(v >= max);
+
+  return v % range;
 }
 
 /* let 0 < k < max and max >= 2. then this function returns
@@ -84,10 +117,7 @@ int rand_source_choose_k(struct rand_source *src, uint16_t max,
 
   j = 0;
   for(i = 0; i < max; i++) {
-    if(rand_source_empty(src))
-      return -1;
-
-    x = rand_source_uint32(src) % (max-i); /* line A */
+    x = rand_source_uint(src, max-i); /* line A */
     if(x < (k-j)) {
       result[j++] = i;
       if(j >= k)
@@ -95,7 +125,7 @@ int rand_source_choose_k(struct rand_source *src, uint16_t max,
     }
   }
 
-  return -2; /* shouldnt get here */
+  return -1; /* shouldnt get here */
 success:
   return 0;
 }
@@ -104,54 +134,42 @@ success:
  * len - 1 iterations implies we will use 4*(len-1) bytes
  * from rand_source.
  */
-int rand_source_shuffle(struct rand_source *src, uint8_t *bytes, uint16_t len) {
+void rand_source_shuffle(struct rand_source *src, uint8_t *bytes, uint16_t len) {
   uint16_t i, j;
   uint8_t tmp;
 
   if(len < 1)
-    return 0;
+    return;
 
   for(i = len - 1; i > 0; i--) {
-    if(rand_source_empty(src))
-      return -1;
-
-    j = rand_source_uint32(src) % (i + 1);
+    j = rand_source_uint(src, i + 1);
     tmp = bytes[j];
     bytes[j] = bytes[i];
     bytes[i] = tmp;
   }
-
-  return 0;
 }
 
-int rand_source_char_range(struct rand_source *src, uint8_t *out,
+inline void rand_source_char_range(struct rand_source *src, uint8_t *out,
                            uint8_t offset, uint8_t range) {
-  if(rand_source_empty(src))
-    return -1;
-
-  *upper = offset + (rand_source_uint32(src) % range);
-  return 0;
+  *out = offset + rand_source_uint(src, range);
 }
 
-inline int rand_source_char_upper(struct rand_source *src, uint8_t *upper) {
+inline void rand_source_char_upper(struct rand_source *src, uint8_t *upper) {
   return rand_source_char_range(src, upper, 0x41, 25);
 }
 
-inline int rand_source_char_lower(struct rand_source *src, uint8_t *lower) {
-  return rand_source_char_range(src, upper, 0x61, 25);
+inline void rand_source_char_lower(struct rand_source *src, uint8_t *lower) {
+  return rand_source_char_range(src, lower, 0x61, 25);
 }
 
-inline int rand_source_char_numeric(struct rand_source *src, uint8_t *numeric) {
-  return rand_source_char_range(src, upper, 0x30, 10);
+inline void rand_source_char_numeric(struct rand_source *src, uint8_t *numeric) {
+  return rand_source_char_range(src, numeric, 0x30, 10);
 }
 
-inline int rand_source_char_symbolic(struct rand_source *src, uint8_t *symbolic) {
+void rand_source_char_symbolic(struct rand_source *src, uint8_t *symbolic) {
   uint8_t n;
 
-  if(rand_source_empty(src))
-    return -1;
-
-  n = rand_source_uint32(src) % (14 + 6 + 4 + 4);
+  n = rand_source_uint(src, 14 + 6 + 4 + 4);
   if(n < 14) {
     *symbolic = 0x21 + n;
   }
@@ -164,6 +182,4 @@ inline int rand_source_char_symbolic(struct rand_source *src, uint8_t *symbolic)
   else {
     *symbolic = 0x7b + (n-24);
   }
-
-  return 0;
 }
