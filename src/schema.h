@@ -17,6 +17,7 @@ typedef enum {
   SCHEMA_ID_HEX = 0,
   SCHEMA_ID_PW0
 } schema_id;
+#define SCHEMA_COUNT 2
 
 extern const char *schema_names[];
 
