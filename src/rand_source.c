@@ -24,8 +24,16 @@ void rand_source_free(struct rand_source *src) {
   crypto_pbkdf2_free(&src->kdf);
 }
 
-static int data_empty(const struct rand_source *src) {
-  return ((src->data_idx+sizeof(uint32_t)) > AVR_DEPO_PBKDF2_DIGEST_BYTES);
+static inline int data_empty(const struct rand_source *src, uint8_t sz) {
+  return ((src->data_idx+sz) > AVR_DEPO_PBKDF2_DIGEST_BYTES);
+}
+
+static inline int data_empty8(const struct rand_source *src) {
+  return data_empty(src, sizeof(uint8_t));
+}
+
+static inline int data_empty32(const struct rand_source *src) {
+  return data_empty(src, sizeof(uint32_t));
 }
 
 static void data_refresh(struct rand_source *src) {
@@ -34,15 +42,27 @@ static void data_refresh(struct rand_source *src) {
   src->data_idx = 0;
 }
 
+uint8_t rand_source_uint8(struct rand_source *src) {
+  uint8_t v;
+
+  if(data_empty8(src))
+    data_refresh(src);
+
+  ADP_debug_print("use 1 8 bit rand chunk\n\r");
+  v = *((uint8_t *) (src->data+src->data_idx));
+  src->data_idx += sizeof(uint8_t);
+  return v;
+}
+
 uint32_t rand_source_uint32(struct rand_source *src) {
   uint32_t v;
 
-  if(data_empty(src))
+  if(data_empty32(src))
     data_refresh(src);
 
-  ADP_debug_print("use 1 32 bit rand byte\n\r");
+  ADP_debug_print("use 1 32 bit rand chunk\n\r");
   v = *((uint32_t *) (src->data+src->data_idx));
-  src->data_idx += 4;
+  src->data_idx += sizeof(uint32_t);
   return v;
 }
 
