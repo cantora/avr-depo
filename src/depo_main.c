@@ -143,7 +143,7 @@ static int action_gen(const uint8_t *key) {
   buf[buf_len++] = iteration/256;
   buf[buf_len++] = iteration % 256;
 
-  schema_init(&sch, SCHEMA_ID_HEX, rsize,
+  schema_init(&sch, SCHEMA_ID_PW0, rsize,
                  buf, buf_len, action_gen_update,
                  500, &proc);
 

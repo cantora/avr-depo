@@ -1,15 +1,18 @@
 #include "rand_source.h"
 #include "crypto.h"
 #include "avr-depo-config.h"
+#include "avr-depo.h"
 
 int rand_source_init(struct rand_source *src,
-                     const uint8_t *bytes, uint16_t len) {
+                     const uint8_t *bytes, uint16_t len,
+                     void (*cb)(uint32_t bits, void *user),
+                     uint32_t cb_ms_ivl, void *user) {
 
   if(crypto_pbkdf2_init(&src->kdf, AVR_DEPO_config_gen_pbkdf2_rounds,
                         bytes, len,
                         (const uint8_t *) AVR_DEPO_config_pbkdf2_salt,
                         AVR_DEPO_config_pbkdf2_saltlen,
-                        NULL, 0, NULL) != 0)
+                        cb, cb_ms_ivl, user) != 0)
     return -1;
 
   src->data_idx = AVR_DEPO_PBKDF2_DIGEST_BYTES;
@@ -17,11 +20,16 @@ int rand_source_init(struct rand_source *src,
   return 0;
 }
 
+void rand_source_free(struct rand_source *src) {
+  crypto_pbkdf2_free(&src->kdf);
+}
+
 static int data_empty(const struct rand_source *src) {
   return ((src->data_idx+sizeof(uint32_t)) >= AVR_DEPO_PBKDF2_DIGEST_BYTES);
 }
 
 static void data_refresh(struct rand_source *src) {
+  ADP_debug_print("refresh random pool\r\n");
   crypto_pbkdf2_block(&src->kdf, src->data);
   src->data_idx = 0;
 }

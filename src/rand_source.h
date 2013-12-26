@@ -10,8 +10,11 @@ struct rand_source {
 };
 
 int rand_source_init(struct rand_source *src,
-                      const uint8_t *bytes, uint16_t len);
+                     const uint8_t *bytes, uint16_t len,
+                     void (*cb)(uint32_t bits, void *user),
+                     uint32_t cb_ms_ivl, void *user);
 
+void rand_source_free(struct rand_source *src);
 uint32_t rand_source_uint32(struct rand_source *src);
 int rand_source_choose_k(struct rand_source *src, uint16_t max,
                          uint16_t k, uint16_t *result);
