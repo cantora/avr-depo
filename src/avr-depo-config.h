@@ -3,8 +3,8 @@
 
 #include "crypto.h"
 
-#define AVR_DEPO_config_pbkdf2_rounds 1000
-#define AVR_DEPO_config_gen_pbkdf2_rounds 1000
+#define AVR_DEPO_config_pbkdf2_rounds 500
+#define AVR_DEPO_config_gen_pbkdf2_rounds 100
 #define AVR_DEPO_config_pbkdf2_salt "12345678"
 #define AVR_DEPO_config_pbkdf2_saltlen 8
 

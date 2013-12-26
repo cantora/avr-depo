@@ -87,6 +87,7 @@ static int action_gen(const uint8_t *key) {
   int status;
   struct schema sch;
   struct ui_processing proc;
+  schema_id sid;
 
   ADP_display_clear();
   display_print(0, 0, "alias:");
@@ -115,13 +116,14 @@ static int action_gen(const uint8_t *key) {
   do_options = ui_option(6, 0, yesno, 2);
   if(do_options != 0) {
     ADP_display_clear();
+    display_print(0, 0, "scma:");
+    sid = ui_option(5, 0, schema_names, SCHEMA_COUNT);
+
+    ADP_display_clear();
     display_print(0, 0, "sz:");
-    /* TODO: allow size > 16, and create passwords
-     * of size > 16 by creating (size/16)+1 passwords and
-     * concatenating them. */
-    rsize = (uint16_t) ui_input_n(3, 0, 
+    rsize = (uint16_t) ui_input_n(3, 0,
                                   DEPO_ACTION_GEN_SIZE_MIN,
-                                  16,
+                                  96,
                                   DEPO_ACTION_GEN_SIZE_DEFAULT);
     ADP_display_clear();
     display_print(0, 0, "n:");
@@ -131,6 +133,7 @@ static int action_gen(const uint8_t *key) {
                                       DEPO_ACTION_GEN_ITER_MIN);
   }
   else {
+    sid = SCHEMA_ID_PW0;
     rsize = DEPO_ACTION_GEN_SIZE_DEFAULT;
     iteration = DEPO_ACTION_GEN_ITER_MIN;
   }
@@ -143,7 +146,7 @@ static int action_gen(const uint8_t *key) {
   buf[buf_len++] = iteration/256;
   buf[buf_len++] = iteration % 256;
 
-  schema_init(&sch, SCHEMA_ID_PW0, rsize,
+  schema_init(&sch, sid, rsize,
                  buf, buf_len, action_gen_update,
                  500, &proc);
 
