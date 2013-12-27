@@ -164,8 +164,9 @@ static int action_gen(const uint8_t *key) {
   ADP_debug_nprint(rsize, (const char *) result);
   ADP_debug_print("\n\r");
   ADP_display_clear();
-  ui_print_scroll(0, 0, rsize, (const char *) result);
-
+  if(ui_print_scroll(0, 0, rsize, (const char *) result) != 0)
+    status = -1;
+   
 done:
   free(result);
   return status;
