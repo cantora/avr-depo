@@ -15,12 +15,21 @@ static struct {
   ui_btn_state state;
 } g_btn;
 
+#define UI_BTN_EDGE_THRESH 150 /* milliseconds */
+
 inline void btn_state_init() {
+  uint32_t t;
+  uint8_t val;
+
   g_btn.state = UI_BTN_STATE_OFF;
   g_btn.t = ADP_ts_millis();
+  do {
+    val = ADP_button_check();
+    t = ADP_ts_millis();
+    if(val != 0)
+      g_btn.t = t;
+  } while(t - g_btn.t < UI_BTN_EDGE_THRESH);
 }
-
-#define UI_BTN_EDGE_THRESH 350 /* milliseconds */
 
 inline int btn_state_down() {
   return (g_btn.state == UI_BTN_STATE_HOLDING_A
@@ -69,11 +78,11 @@ void btn_state_update() {
         g_btn.t = ADP_ts_millis();
       }
     }
-    else if(ADP_ts_millis() - g_btn.t >= 225) {
+    else if(ADP_ts_millis() - g_btn.t >= UI_BTN_EDGE_THRESH) {
       g_btn.state = UI_BTN_STATE_RELEASED;
     }
     break;
-  default:
+  default: /* UI_BTN_STATE_RELEASED */
     ;/* stick in this state until manual reset */
   }
 }

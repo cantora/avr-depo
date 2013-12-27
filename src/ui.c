@@ -366,7 +366,7 @@ int ui_print_scroll(uint16_t col, uint16_t row, uint16_t len,
     }
 
     if(pos != prev_pos) {
-      debug_print_n(pos, 10);
+      /*debug_print_n(pos, 10);*/
       display_nprint(col, row, space, s + pos);
       if(pos > 0) {
         ADP_display_cursor_set(col, row);
