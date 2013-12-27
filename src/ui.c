@@ -327,3 +327,58 @@ void ui_wait_for_button_release() {
       break;
   }
 }
+
+int ui_print_scroll(uint16_t col, uint16_t row, uint16_t len,
+                    const char *s) {
+  uint16_t cols, rows, space, range;
+  int16_t pos, prev_pos;
+
+  display_dims(&cols, &rows);
+  space = cols - col;
+  if(space < 1)
+    return -1;
+
+  if(len <= space) {
+    display_nprint(col, row, len, s);
+    ui_wait_for_button_release();
+    return 0;
+  }
+
+  range = len - space;
+  prev_pos = 1;
+  pos = 0;
+  selector_set_s(pos);
+  btn_state_init();
+
+  while(1) {
+    btn_state_update();
+    if(btn_state_released())
+      break;
+
+    pos = selector_position_s();
+    if(pos < 0) {
+      pos = 0;
+      selector_set_s(pos);
+    }
+    else if(pos > range) {
+      pos = range;
+      selector_set_s(pos);
+    }
+
+    if(pos != prev_pos) {
+      debug_print_n(pos, 10);
+      display_nprint(col, row, space, s + pos);
+      if(pos > 0) {
+        ADP_display_cursor_set(col, row);
+        ADP_display_write(ADP_display_left_char());
+      }
+      if(pos < range) {
+        ADP_display_cursor_set(col+space-1, row);
+        ADP_display_write(ADP_display_right_char());
+      }
+      prev_pos = pos;
+    }
+  }
+    
+  return 0;
+}

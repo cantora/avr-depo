@@ -164,8 +164,7 @@ static int action_gen(const uint8_t *key) {
   ADP_debug_nprint(rsize, (const char *) result);
   ADP_debug_print("\n\r");
   ADP_display_clear();
-  display_nprint(0, 0, rsize, (const char *) result);
-  ui_wait_for_button_release();
+  ui_print_scroll(0, 0, rsize, (const char *) result);
 
 done:
   free(result);
@@ -203,6 +202,16 @@ static uint8_t depo_loop(const uint8_t *key) {
   }
 }
 
+static void lcd_char_test() {
+  char chs[256];
+  int i;
+
+  for(i = 0; i < sizeof(chs); i++)
+    chs[i] = i;
+
+  ui_print_scroll(0, 0, sizeof(chs), chs);
+}
+
 void depo_main() {
   uint8_t key[KEYLEN];
 
@@ -214,6 +223,7 @@ void depo_main() {
     return;
   }
 
+  //lcd_char_test();
   while(1) {
     if(generate_key(key) != 0) {
       err("error in password entry");

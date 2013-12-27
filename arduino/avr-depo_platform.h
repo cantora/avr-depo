@@ -45,6 +45,8 @@ uint32_t arduino_millis();
  */
 #define ADP_display_ok_char() 0xff /* solid block */
 #define ADP_display_input_terminal_char() 0x5c /* '\' */
+#define ADP_display_left_char() 0x7f
+#define ADP_display_right_char() 0x7e
 #define ADP_delay(m) arduino_delay(m)
 #define ADP_ts_millis() arduino_millis()
 

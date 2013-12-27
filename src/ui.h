@@ -26,5 +26,6 @@ uint16_t ui_option(uint16_t col, uint16_t row, const char **options, uint16_t n_
 void ui_processing_init(struct ui_processing *proc, uint32_t total);
 void ui_processing_update(uint32_t done, void *user);
 void ui_wait_for_button_release();
+int ui_print_scroll(uint16_t col, uint16_t row, uint16_t len, const char *s);
 
 #endif /* AVR_DEPO_ui_h */

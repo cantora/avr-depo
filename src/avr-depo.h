@@ -55,6 +55,14 @@ extern "C" {
 #  error "platform: define a uint8_t ADP_display_ok_char()"
 #endif
 
+#ifndef ADP_display_left_char
+#  error "platform: define a uint8_t ADP_display_left_char()"
+#endif
+
+#ifndef ADP_display_right_char
+#  error "platform: define a uint8_t ADP_display_right_char()"
+#endif
+
 #ifndef ADP_display_input_terminal_char
 #  error "platform: define a uint8_t ADP_display_input_terminal_char(). (value must be in range 0x20->0x7D)"
 #endif
