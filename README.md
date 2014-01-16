@@ -42,6 +42,21 @@ prototype.
    algorithms will use different amounts of key data. The implementations
    can be found in `src/schema.c`.
 
+##technical details on password schemas
+Presently only two password generation schemas have been implemented, but
+many more are planned.
+
+ * "hex": this schema converts generated key bytes to their hex
+   representations. One byte of master key is consumed per two 
+   characters of output.
+ * "pw0": consumes generated key bytes to make random choices leading
+   to the generation of a password with at least one upper case letter,
+   at least one lower case letter, at least one symbol and at least one
+   number. This schema consumes at least four bytes of master key per
+   character of output. Additionally, a number of bytes are consumed to
+   decide how many of each character class will be represented and to
+   shuffle the different classes together.
+
 ##configuration
 This code is not ready for the end user, but if you want to try it out anyway
 you should configure the PBKDF2 settings in `src/avr-depo-config.h`. Don't
