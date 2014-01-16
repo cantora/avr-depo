@@ -8,18 +8,18 @@ master password comprimise via trojan.
 ##overview
 avr-depo helps mitigate ["password hell"](https://en.wikipedia.org/wiki/Password_fatigue) 
 by generating derived passwords using a master password combined with 
-an 'alias', and a 'name'. Usually 'name' will be the name or a particular 
-service or website. The 'alias' can be used to maintain different 
+an *alias* and a *name*. Usually *name* will be the name of a particular 
+service or website. The *alias* can be used to maintain different 
 accounts/passwords for the same service/website using different identities. 
 For example, one could use a 'work' alias for all work related passwords 
-(alias can be left blank, which can be considered the 'default' identity). 
-Deterministic algorithms are used to password generation such that given 
-the same master password, alias and name, avr-depo will generate the same 
+(*alias* can be left blank, which could be considered the 'default' identity). 
+Deterministic algorithms are used for password generation such that given 
+the same master password, *alias* and *name*, avr-depo will generate the same 
 output password. This means that the passwords are not stored anywhere, 
 but remain accessible to only the person who knows the master password.
 
 ##target platforms
-Only the Arduino platform is currently supported.
+Only the [Arduino](http://arduino.cc/) platform is currently supported.
 
 ##project status
 The arduino firmware is currently only a proof of concept. Some
@@ -32,7 +32,7 @@ prototype.
 ##technical details
  * master key generation: [PBKDF2](https://en.wikipedia.org/wiki/PBKDF2) is
    used to transform the master password into key material for use by the
-   password generation algorithms. The salt and PBKDF2 rounds parameter
+   password generation algorithms. The salt and PBKDF2 rounds parameters
    are configurable (see the configuration section). The PBKDF2 source
    code (`src/crypto_pbkdf2.c`) was ported from the openssl implementation.
 
