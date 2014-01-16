@@ -38,13 +38,18 @@ prototype.
 
  * password generation: the algorithms all consume the key bytes produced
    by PBKDF2 in order to make pseudo-random choices which lead to a 
-   password satisfying the parameters of the chosen algorithm. Different
-   algorithms will use different amounts of key data. The implementations
-   can be found in `src/schema.c`.
+   password satisfying the parameters of the chosen algorithm. When 
+   making a random choice, four bytes of master key are consumed. In
+   certain cases the four bytes will be discarded if they would cause
+   modulo bias (see 
+   [this](http://stackoverflow.com/questions/8319346/fast-way-to-avoid-modulo-bias)
+   and `src/rand_source.c#rand_source_uint`). Different algorithms will 
+   use different amounts of key data.
+   
 
 ##technical details on password schemas
 Presently only two password generation schemas have been implemented, but
-many more are planned.
+many more are planned. The implementations can be found in `src/schema.c`.
 
  * "hex": this schema converts generated key bytes to their hex
    representations. One byte of master key is consumed per two 
